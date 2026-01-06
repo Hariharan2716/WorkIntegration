@@ -165,4 +165,5 @@ You control freshness, not the framework.
 
 The best Next.js apps are **static-first, dynamic-where-necessary**.
 
+
 If you want, tell me what kind of app you’re building (SaaS, portfolio, e-commerce, internal tool), and I’ll map out **exactly** how your routes should be rendered.
