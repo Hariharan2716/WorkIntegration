@@ -1,9 +1,10 @@
-// app/api/users/route.ts
+// app/api/admin/route.ts
 import { NextResponse } from "next/server";
 
 export async function GET() {
   return NextResponse.json({
     success: true,
-    data: ["user1", "user2"],
+    message: "Welcome Admin",
   });
 }
+
