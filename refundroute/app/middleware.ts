@@ -1,51 +1,36 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 
-type JwtPayload = {
-  userId: number;
-  role: "ADMIN" | "USER";
-};
-
-const ADMIN_ONLY_PATHS = ["/api/admin"];
+const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 export function middleware(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
+  const { pathname } = req.nextUrl;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return NextResponse.json(
-      { success: false, message: "Unauthorized" },
-      { status: 401 }
-    );
+  // Public routes
+  if (pathname === "/" || pathname.startsWith("/login")) {
+    return NextResponse.next();
   }
 
-  const token = authHeader.split(" ")[1];
+  // Protected routes
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/users")) {
+    const token = req.cookies.get("token")?.value;
 
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as JwtPayload;
-
-    const pathname = req.nextUrl.pathname;
-
-    // Admin-only route protection
-    const isAdminRoute = ADMIN_ONLY_PATHS.some((path) =>
-      pathname.startsWith(path)
-    );
-
-    if (isAdminRoute && decoded.role !== "ADMIN") {
-      return NextResponse.json(
-        { success: false, message: "Access denied" },
-        { status: 403 }
-      );
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    // Token valid → allow request
-    return NextResponse.next();
-  } catch {
-    return NextResponse.json(
-      { success: false, message: "Invalid or expired token" },
-      { status: 401 }
-    );
+    try {
+      jwt.verify(token, JWT_SECRET);
+      return NextResponse.next();
+    } catch {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
   }
+
+  return NextResponse.next();
 }
+
+export const config = {
+  matcher: ["/dashboard/:path*", "/users/:path*"],
+};
